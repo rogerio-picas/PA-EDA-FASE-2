@@ -10,6 +10,7 @@
  *
  */
 
+#include <stdbool.h>
 
  /** @def MAX_DIM
   *  @brief Dimensão da matriz da cidade.
@@ -58,6 +59,8 @@ typedef struct Aresta {
 typedef struct Vertice {
     ANTENAS* infoAntenas;    /** Informação da antena associada ao vértice */
     ARESTA* adjacentes;      /** Lista de arestas (ligações a outras antenas) */
+    int visitado;            /** Campo utilizado para marcar se o vertice foi visitado ou não */
+    struct Vertice* prox;    /** Necessário para percorrer os vértices para procurar */
 } VERTICE;
 
 /**
@@ -70,6 +73,16 @@ typedef struct Grafo {
     int numVertices;         /** Número atual de vértices no grafo */
 } GRAFO;
 
+/**
+ * @struct Fila
+ * @brief  Implementa uma fila dinâmica de vértices para buscas em grafos (BFS)
+ *
+ * A fila usa o campo 'prox' em cada VERTICE para encadear os vértices na estrutura
+ */
+typedef struct Fila {
+    VERTICE* frente;  /**< Apontador para o vértice no início da fila */
+    VERTICE* tras;    /**< Apontador para o vértice no fim da fila */
+} FILA;
 /**
  * @struct Rede_Grafos
  * @brief Conjunto de grafos separados por frequência.
@@ -120,58 +133,108 @@ REDE* criarRede();
 #pragma region Funções de Inserção e Manipulação
 
 /**
- * @brief Insere uma nova antena na rede de grafos conforme a frequência.
- * @param rede Apontador para a rede.
- * @param freqAntena Frequência da antena.
- * @param x Coordenada X.
- * @param y Coordenada Y.
- * @return 0 se inserção for bem-sucedida, 1 em caso de erro.
+ * @brief Insere uma nova antena na rede de grafos conforme a frequência
+ * @param rede Apontador para a rede
+ * @param freqAntena Frequência da antena
+ * @param x Coordenada X
+ * @param y Coordenada Y
+ * @return 0 se inserção for bem-sucedida, 1 em caso de erro
  */
 int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
 
 /**
- * @brief Conecta dois vértices num grafo com uma aresta bidirecional.
- * @param grafo Apontador para o grafo.
- * @param origem Índice do vértice de origem.
- * @param destino Índice do vértice de destino.
- * @return 0 se bem-sucedido, 1 em caso de erro.
+ * @brief Conecta dois vértices num grafo com uma aresta bidirecional
+ * @param grafo Apontador para o grafo
+ * @param origem Índice do vértice de origem
+ * @param destino Índice do vértice de destino
+ * @return 0 se bem-sucedido, 1 em caso de erro
  */
 int conectarVertices(GRAFO* grafo, int origem, int destino);
 
 /**
- * @brief Verifica se uma antena já existe no grafo.
- * @param grafo Apontador para o grafo.
- * @param freqAntena Frequência da antena.
- * @param x Coordenada X.
- * @param y Coordenada Y.
- * @return 0 se existir, 1 se não existir.
+ * @brief Verifica se uma antena já existe no grafo
+ * @param grafo Apontador para o grafo
+ * @param freqAntena Frequência da antena
+ * @param x Coordenada X
+ * @param y Coordenada Y
+ * @return 0 se existir, 1 se não existir
  */
 int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y);
 
 /**
- * @brief Mostra a rede de grafos numa matriz, com base nas frequências especificadas.
- * @param redeGrafos Apontador para a rede.
- * @param freqsAntenas Vetor de frequências a considerar.
- * @param numFreqs Número de frequências no vetor.
- * @return 0 se bem-sucedido, 1 se erro.
+ * @brief Mostra a rede de grafos numa matriz, com base nas frequências especificadas
+ * @param redeGrafos Apontador para a rede
+ * @param freqsAntenas Vetor de frequências a considerar
+ * @param numFreqs Número de frequências no vetor
+ * @return 0 se bem-sucedido, 1 se erro
  */
 int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs);
 
 /**
- * @brief Encontra o índice de um vértice no grafo com base nas coordenadas.
- * @param grafo Apontador para o grafo.
- * @param x Coordenada X.
- * @param y Coordenada Y.
- * @return Índice do vértice ou -1 se não encontrado.
+ * @brief Encontra o índice de um vértice no grafo com base nas coordenadas
+ * @param grafo Apontador para o grafo
+ * @param x Coordenada X
+ * @param y Coordenada Y
+ * @return Índice do vértice ou -1 se não encontrado
  */
 int encontrarIndiceVertice(GRAFO* grafo, int x, int y);
 
-#pragma endregion
-
 /**
- * @brief Lê um ficheiro de texto com a matriz de antenas e carrega na rede.
- * @param rede Apontador para a rede.
- * @param ficheiroTexto Nome do ficheiro.
- * @return 0 se bem-sucedido, 1 em caso de erro.
+ * @brief Lê um ficheiro de texto com a matriz de antenas e carrega na rede
+ * @param rede Apontador para a rede
+ * @param ficheiroTexto Nome do ficheiro
+ * @return 0 se bem-sucedido, 1 em caso de erro
  */
 int lerFicheiroTexto(REDE* rede, char* ficheiroTexto);
+
+#pragma endregion
+
+#pragma region Funções Auxiliares para BFS
+/**
+ * @brief      Inicializa uma fila vazia
+ * @param[in]  fila   Apontador para a estrutura da fila que será inicializada
+ */
+void criarFila(FILA* fila);
+
+/**
+ * @brief      Verifica se a fila está vazia
+ * @param[in]  fila   Apontador para a fila a ser verificada
+ * @return     true se a fila estiver vazia (frente == NULL), caso contrário false
+ */
+bool filaVazia(FILA* fila);
+
+/**
+ * @brief      Enfila um vértice na fila
+ * @param[in]  fila      Apontador para a fila
+ * @param[in]  vertice   Apontador para o vértice a inserir
+ * @return     true se o vértice foi enfileirado com sucesso, false em caso de falha de alocação
+ */
+bool enfilarVertice(FILA* fila, VERTICE* vertice);
+
+/**
+ * @brief      Desenfileira o vértice que está na frente da fila
+ * @param[in]  fila   Apontador para a fila
+ * @return     Apontador para o vértice removido, ou NULL se a fila estiver vazia
+ */
+VERTICE* desenfilarVertice(FILA* fila);
+
+/**
+ * @brief      Executa a busca em largura (BFS) a partir de uma antena inicial
+ * @param[in]  grafo       Apontador para o grafo onde a BFS será realizada
+ * @param[in]  x           Coordenada X da antena inicial
+ * @param[in]  y           Coordenada Y da antena inicial
+ * @param[out] count       Endereço de um inteiro onde será armazenado o número de vértices visitados.
+ * @param[out] resultado   Vetor (tamanho MAX_ANTENAS) onde serão guardados os índices dos vértices visitados,
+ *                         na ordem em que foram alcançados pela BFS
+ * @return     0 em caso de sucesso (BFS executada), 1 em caso de grafo inválido ou antena inicial não encontrada
+ */
+int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]);
+
+/**
+ * @brief      Verifica se um grafo é válido (não é NULL e contém pelo menos um vértice)
+ * @param[in]  grafo   Apontador para o grafo a ser validado
+ * @return     true se o grafo for válido (não NULL e numVertices > 0), caso contrário false
+ */
+bool validarGrafo(GRAFO* grafo);
+
+#pragma endregion
