@@ -1,81 +1,177 @@
 #pragma once
 
-#define MAX_DIM 20 // Dimensão da matriz adj
-#define MAX_ANTENAS 50 // Numero maximo de antenas
-#define MAX_FREQ 26 // Nº de frequencias maximas
-//Estrutura responsavel pela alocação dos dados das antenas
+/**
+ * @funcoes.h
+ * @brief Definições de estruturas e funções para a gestão de redes de antenas no grafo
+ *
+ * @author Rogério Picas
+ * @date 07-05-2025
+ * @version 1.0
+ *
+ */
 
+
+ /** @def MAX_DIM
+  *  @brief Dimensão da matriz da cidade.
+  */
+
+#define MAX_DIM 20
+
+  /** @def MAX_ANTENAS
+   *  @brief Número máximo de antenas.
+   */
+
+#define MAX_ANTENAS 50
+
+   /** @def MAX_FREQ
+	*  @brief Número máximo de frequências (de A a Z).
+	*/
+
+#define MAX_FREQ 26
+
+
+#pragma region Estruturas
+
+    /**
+     * @struct Antenas
+     * @brief Representa uma antena com frequência e posição na matriz.
+     */
 typedef struct Antenas {
-	char frequencia;
-	int x;
-	int y;
-}ANTENAS;
+    char frequencia; /** Frequência da antena (A-Z) */
+    int x;           /** Coordenada X na matriz */
+    int y;           /** Coordenada Y na matriz */
+} ANTENAS;
 
-
-// Estrutura que irá fazer as ligações entre vértices         1º Aresta 2ºVertice 3ºGrafo
+/**
+ * @struct Aresta
+ * @brief Representa uma aresta entre vértices (antenas).
+ */
 typedef struct Aresta {
-	int destino;
-	struct Aresta* prox;
+    int destino;             /** Índice do vértice de destino */
+    struct Aresta* prox;     /** Apontador para a próxima aresta (lista ligada) */
 } ARESTA;
 
-// Estrutura responsavel pela alocação das antenas num vertice
-
+/**
+ * @struct Vertice
+ * @brief Representa um vértice no grafo, contendo uma antena e as suas ligações.
+ */
 typedef struct Vertice {
-	ANTENAS* infoAntenas;
-	ARESTA* adjacentes; // Ligações a outras antenas com mesma frequência
+    ANTENAS* infoAntenas;    /** Informação da antena associada ao vértice */
+    ARESTA* adjacentes;      /** Lista de arestas (ligações a outras antenas) */
 } VERTICE;
 
-// Estrutura responsavel pela inserção do grafo numa matriz de adjacencia
-
+/**
+ * @struct Grafo
+ * @brief Representa um grafo com vértices ligados por arestas.
+ */
 typedef struct Grafo {
-	VERTICE** vertices;
-	int maxLigacoes;
-	int numVertices; // Contador de antenas presentes na matriz de adjacencia
-}GRAFO;
+    VERTICE** vertices;      /** Lista de apontadores para vértices */
+    int maxLigacoes;         /** Número máximo de ligações/vértices */
+    int numVertices;         /** Número atual de vértices no grafo */
+} GRAFO;
 
-// Estrutura responsável por gerir os diferentes grafos por frequencia
-
+/**
+ * @struct Rede_Grafos
+ * @brief Conjunto de grafos separados por frequência.
+ */
 typedef struct Rede_Grafos {
-	GRAFO* grafos[MAX_FREQ]; // Um grafo por frequencia
-}REDE;
+    GRAFO* grafos[MAX_FREQ]; /** Vetor de grafos, um por frequência de 'A' a 'Z' */
+} REDE;
 
+#pragma endregion
 
+#pragma region Funções de Criação
 
+/**
+ * @brief Cria uma nova antena com a frequência e coordenadas indicadas.
+ * @param freqAntena Frequência da antena (letra de A-Z).
+ * @param x Coordenada X.
+ * @param y Coordenada Y.
+ * @return Apontador para a antena criada.
+ */
 
-ANTENAS* criarAntena(char freqAntena, int x, int y, int resultado);
+ANTENAS* criarAntena(char freqAntena, int x, int y);
 
+/**
+ * @brief Cria um novo vértice associado a uma antena.
+ * @param antena Apontador para a antena.
+ * @return Apontador para o vértice criado.
+ */
 
 VERTICE* criarVertice(ANTENAS* antena);
 
-int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
+/**
+ * @brief Cria um novo grafo com capacidade para um número definido de ligações.
+ * @param maxLigacoes Número máximo de vértices que o grafo pode conter.
+ * @return Apontador para o grafo criado.
+ */
 
-GRAFO* criarGrafo(int maxLigacoes, int resultado);
+GRAFO* criarGrafo(int maxLigacoes);
 
-int conectarVertices(GRAFO* grafo, int origem, int destino);
-
-int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y);
+/**
+ * @brief Cria uma nova rede de grafos inicializada a NULL.
+ * @return Apontador para a rede criada.
+ */
 
 REDE* criarRede();
 
+#pragma endregion
+
+#pragma region Funções de Inserção e Manipulação
+
+/**
+ * @brief Insere uma nova antena na rede de grafos conforme a frequência.
+ * @param rede Apontador para a rede.
+ * @param freqAntena Frequência da antena.
+ * @param x Coordenada X.
+ * @param y Coordenada Y.
+ * @return 0 se inserção for bem-sucedida, 1 em caso de erro.
+ */
+int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
+
+/**
+ * @brief Conecta dois vértices num grafo com uma aresta bidirecional.
+ * @param grafo Apontador para o grafo.
+ * @param origem Índice do vértice de origem.
+ * @param destino Índice do vértice de destino.
+ * @return 0 se bem-sucedido, 1 em caso de erro.
+ */
+int conectarVertices(GRAFO* grafo, int origem, int destino);
+
+/**
+ * @brief Verifica se uma antena já existe no grafo.
+ * @param grafo Apontador para o grafo.
+ * @param freqAntena Frequência da antena.
+ * @param x Coordenada X.
+ * @param y Coordenada Y.
+ * @return 0 se existir, 1 se não existir.
+ */
+int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y);
+
+/**
+ * @brief Mostra a rede de grafos numa matriz, com base nas frequências especificadas.
+ * @param redeGrafos Apontador para a rede.
+ * @param freqsAntenas Vetor de frequências a considerar.
+ * @param numFreqs Número de frequências no vetor.
+ * @return 0 se bem-sucedido, 1 se erro.
+ */
 int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs);
 
-int lerFicheiroTexto(REDE* rede, char* ficheiroTexto) {
-	FILE* fp = fopen(ficheiroTexto, "r");
-	if (fp == NULL)
-	{
-		return 0;
-	}
-	char linha[MAX_DIM + 2];
-	for (int i = 0; i < MAX_DIM; i++)
-	{
-		if (fgets(linha, sizeof(linha), fp) == NULL) break;
+/**
+ * @brief Encontra o índice de um vértice no grafo com base nas coordenadas.
+ * @param grafo Apontador para o grafo.
+ * @param x Coordenada X.
+ * @param y Coordenada Y.
+ * @return Índice do vértice ou -1 se não encontrado.
+ */
+int encontrarIndiceVertice(GRAFO* grafo, int x, int y);
 
-		for (int j = 0; j < MAX_DIM; j++)
-		{
+#pragma endregion
 
-		}
-}
-
-// Cada antena será um vértice
-// Cada vértice contém uma antena e x e y
-// Só deverão estar interligadas antenas com a mesma frequencia
+/**
+ * @brief Lê um ficheiro de texto com a matriz de antenas e carrega na rede.
+ * @param rede Apontador para a rede.
+ * @param ficheiroTexto Nome do ficheiro.
+ * @return 0 se bem-sucedido, 1 em caso de erro.
+ */
+int lerFicheiroTexto(REDE* rede, char* ficheiroTexto);
