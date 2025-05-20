@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include "funcoes.h"
 
+
 int main() {
 
     // Cria a rede e carrega ficheiro de texto
@@ -20,54 +21,77 @@ int main() {
     char* ficheiroTexto = "antenas.txt";
     lerFicheiroTexto(rede, ficheiroTexto);
 
-    // Inserir manualmente  antenas de frequência 'A'
+    int opcao;
+    do {
+        printf("\n=== MENU ===\n");
+        printf("1. Mostrar mapa de frequencias\n");
+        printf("2. Inserir antena manualmente\n");
+        printf("3. Conectar antenas manualmente (freq. A)\n");
+        printf("4. Fazer BFS em frequencia A\n");
+        printf("0. Sair\n");
+        printf("Escolha uma opcao: ");
 
-    inserirAntenaRedeGrafos(rede, 'A', 10, 5);
-    inserirAntenaRedeGrafos(rede, 'A', 11, 6);
-    inserirAntenaRedeGrafos(rede, 'A', 19, 17);
+        if (scanf_s("%d", &opcao) != 1) {
+            printf("Entrada invalida! Digite um número.\n");
+            continue;
+        }
 
-    // Obtém o grafo de frequência 'A' (índice 0)
+        switch (opcao) {
+        case 1: {
+            char frequencias[MAX_FREQ] = { 'A', 'C', 'B', 'O' }; // Exemplo
+            mostrarRedeGrafos(rede, frequencias, 4);
+            break;
+        }
+        case 2: {
+            char freq = lerFrequencia();
+            int x = lerCoordenada("X");
+            int y = lerCoordenada("Y");
+            inserirAntenaRedeGrafos(rede, freq, x, y);
+            printf("Antena inserida com sucesso!\n");
+            break;
+        }
+        case 3: {
+            // Qual é a frequencia do grafo a conectar os vertices?
+            printf("Digite a frequencia do grafo a establecer conexao entre vertices:\n");
+            char freq = lerFrequencia();
+            GRAFO* grafoA = rede->grafos[freq - 'A'];
+            if (!validarGrafo(grafoA)) {
+                printf("Erro na construcao do grafo %c\n", freq);
+                break;
+            }
+            conectarVerticesAuto(grafoA);
+            if (conectarVerticesAuto(grafoA) == 0)
+                printf("Vertices conectados com sucesso!\n");
+            else
+                printf("Erro ao conectar vertices.\n");
+            break;
+        }
+        case 4: {
+            GRAFO* grafoA = rede->grafos['A' - 'A'];
+            if (!validarGrafo(grafoA)) {
+                printf("Erro na construcao do grafo A.\n");
+                break;
+            }
 
-    GRAFO* grafoA = rede->grafos['A' - 'A'];
+            int x = 10, y = 5; // Ou pedir input ao utilizador
+            int resultados[MAX_ANTENAS], count;
 
-    if (!validarGrafo(grafoA)) {
-        printf("Erro na construção do grafo!\n");
-        return 1;
-    }
+            BFS(grafoA, x, y, &count, resultados);
+            printf("\nAntenas visitadas na BFS (freq 'A'):\n");
+            for (int i = 0; i < count; i++) {
+                VERTICE* v = grafoA->vertices[resultados[i]];
+                printf("  (%d, %d), frequencia: %c\n", v->infoAntenas->x, v->infoAntenas->y, v->infoAntenas->frequencia);
+            }
+            break;
+        }
+        case 0:
+            printf("A sair...\n");
+            break;
+        default:
+            printf("Opcao invalida!\n");
+        }
 
-    // Conectar aqueles três vértices (que ficaram nos índices 0, 1, 2 em grafoA)
-
-    conectarVertices(grafoA, 0, 1);
-    conectarVertices(grafoA, 1, 2);
-    conectarVertices(grafoA, 0, 2);
-
-    if (!validarGrafo(grafoA)) {
-        printf("Erro a efetuar conecções no grafo!\n");
-        return 1;
-    }
-
-    // Mostrar o “mapa” da frequência A
-
-    char frequencias[MAX_FREQ] = { 'A', 'C', 'B', 'O' }; // Só para exemplo
-    printf("Mapa da frequência A:\n");
-    mostrarRedeGrafos(rede, frequencias, 4);
-
-    // Fazer o BFS em grafoA, começando na antena em (10,5)
-
-    int resultados[MAX_ANTENAS];
-    int count;
-    BFS(grafoA, 10, 5, &count, resultados);
-
-    // Imprimir os vértices visitados (usando os índices guardados em resultados[])
-    printf("\nAntenas visitadas na BFS (freq 'A'):\n");
-    for (int i = 0; i < count; i++) {
-        VERTICE* v = grafoA->vertices[resultados[i]];
-        printf("  (%d, %d), frequência: %c\n",
-            v->infoAntenas->x,
-            v->infoAntenas->y,
-            v->infoAntenas->frequencia);
-
-    }
+    } while (opcao != 0);
 
     return 0;
 

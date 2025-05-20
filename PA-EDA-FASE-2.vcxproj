@@ -127,7 +127,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="codigoapagado.c" />
     <ClCompile Include="funcoes.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
