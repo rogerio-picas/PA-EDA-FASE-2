@@ -21,9 +21,6 @@
     <ClCompile Include="funcoes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="codigoapagado.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="funcoes.h">
