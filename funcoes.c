@@ -22,6 +22,7 @@
 #include <stdbool.h>
 
 
+
 #pragma region Funções de Criação
 
  /**
@@ -233,6 +234,26 @@ grafo->vertices[destino]->adjacentes = novaArestaInversa;
 return 0; //Sucesso
 }
 
+int conectarVerticesAuto(GRAFO* grafo) {
+
+	if (grafo == NULL)
+	{
+		return 1;
+	}
+
+	for (int i = 0; i < grafo->numVertices ; i++)
+	{
+		for (int j = 0; j < grafo->numVertices; j++)
+		{
+			if ((conectarVertices(grafo, i, j) != 0))
+			{
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 /**
  * @brief      Verifica se existe uma antena no grafo com mesma frequência e coordenadas
  * @param[in]  grafo       -> Apontador para o grafo
@@ -321,7 +342,6 @@ int lerFicheiroTexto(REDE* rede, char* ficheiroTexto) {
 	}
 
 	char linha[MAX_DIM + 2];
-	int resultado;
 	for (int i = 0; i < MAX_DIM; i++)
 	{
 		if (fgets(linha, sizeof(linha), fp) == NULL) break;
@@ -504,6 +524,35 @@ int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]) {
 
 	}
 	return 0;
+}
+
+#pragma endregion
+
+#pragma region Funções de Validação de Inserção
+
+int lerCoordenada(const char* nomeCoordenada) {
+	int valor;
+	while (1) {
+		printf("Digite a coordenada %s: ", nomeCoordenada);
+		if (scanf_s("%d", &valor) == 1) break;
+
+		printf("Entrada invalida! Insira um numero inteiro.\n");
+	}
+	return valor;
+}
+
+char lerFrequencia() {
+	char freq;
+	while (1) {
+		printf("Digite a frequencia da antena (A-Z): ");
+		// Limpar o buffer de entrada corretamente
+		while ((getchar()) != '\n'); 
+
+		if (scanf_s("%c", &freq, 1) == 1 && freq >= 'A' && freq <= 'Z') break;
+
+		printf("Erro! Insira uma letra maiuscula entre A e Z.\n");
+	}
+	return freq;
 }
 
 #pragma endregion

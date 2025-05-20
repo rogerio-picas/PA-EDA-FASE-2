@@ -12,6 +12,7 @@
 
 #include <stdbool.h>
 
+
  /** @def MAX_DIM
   *  @brief Dimensão da matriz da cidade.
   */
@@ -151,6 +152,8 @@ int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
  */
 int conectarVertices(GRAFO* grafo, int origem, int destino);
 
+int conectarVerticesAuto(GRAFO* grafo);
+
 /**
  * @brief Verifica se uma antena já existe no grafo
  * @param grafo Apontador para o grafo
@@ -236,5 +239,13 @@ int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]);
  * @return     true se o grafo for válido (não NULL e numVertices > 0), caso contrário false
  */
 bool validarGrafo(GRAFO* grafo);
+
+#pragma endregion
+
+#pragma region Funções de Validação de Inserção
+
+int lerCoordenada(const char* nomeCoordenada);
+
+char lerFrequencia();
 
 #pragma endregion
