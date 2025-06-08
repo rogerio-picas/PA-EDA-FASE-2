@@ -3,19 +3,11 @@
  * @brief Implementação de funções para gestão de grafos de antenas, incluindo criação, manipulação,
  *        procura em largura (BFS) e validação de grafos.
  *
- * Este ficheiro contém:
- * - Criação de tipos ANTENAS, VERTICE, GRAFO e REDE
- * - Funções para inserir antenas e conectar vértices
- * - Leitura de ficheiro de texto para carregar antenas em grafos
- * - Implementação de fila dinâmica para BFS
- * - Função BFS que retorna índices de vértices visitados
- * - Validação de consistência do grafo
- *
  * @author Rogério Picas
  * @date 07-05-2025
  * @version 1.0
  */
-
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include "funcoes.h"
@@ -26,11 +18,16 @@
 #pragma region Funções de Criação
 
  /**
-  * @brief      Cria uma nova antena com frequência e coordenadas fornecidas
-  * @param[in]  freqAntena  Caracter que representa a frequência da antena ('A' a 'Z')
-  * @param[in]  x - Coordenada X da antena (0..MAX_DIM-1)
-  * @param[in]  y - Coordenada Y da antena (0..MAX_DIM-1)
-  * @return     Apontador para a antena alocada, ou NULL em caso de falha de malloc
+  * @brief Cria e inicializa uma nova antena com frequência e coordenadas definidas.
+  *
+  * Esta função aloca memória para uma nova estrutura ANTENAS, define a frequência
+  * e as coordenadas (x, y) da antena e retorna um apontador para a estrutura criada.
+  *
+  * @param freqAntena Carácter que representa a frequência da antena.
+  * @param x Coordenada X da antena.
+  * @param y Coordenada Y da antena.
+  *
+  * @return Apontador para a nova estrutura ANTENAS criada, ou NULL se a alocação de memória falhar.
   */
 ANTENAS* criarAntena(char freqAntena, int x, int y) {
 
@@ -40,17 +37,23 @@ ANTENAS* criarAntena(char freqAntena, int x, int y) {
 	{
 		return NULL;
 	}
-		auxVar->frequencia = freqAntena;
-		auxVar->x = x;
-		auxVar->y = y;
+	auxVar->frequencia = freqAntena;
+	auxVar->x = x;
+	auxVar->y = y;
 
-		return auxVar;
+	return auxVar;
 }
 
 /**
- * @brief      Cria um novo vértice associado a uma antena
- * @param[in]  antena  Apontador para a estrutura ANTENAS criada anteriormente
- * @return     Apontador para o vértice alocado, ou NULL em caso de falha de malloc
+ * @brief Cria um novo vértice contendo uma antena.
+ *
+ * Esta função aloca memória para um novo vértice do grafo, inicializa os seus
+ * campos com valores apropriados e associa o apontador da estrutura de antena
+ * fornecida ao campo "infoAntenas" do vértice.
+ *
+ * @param antena Apontador para a estrutura ANTENAS que será associada ao vértice.
+ *
+ * @return Um novo vértice criado, ou NULL se a alocação de memória falhar.
  */
 VERTICE* criarVertice(ANTENAS* antena) {
 
@@ -61,48 +64,64 @@ VERTICE* criarVertice(ANTENAS* antena) {
 	}
 	novoVertice->infoAntenas = antena;
 	novoVertice->adjacentes = NULL;
-
+	novoVertice->visitado = 0;
+	novoVertice->prox = NULL;
 	return novoVertice;
 }
 
 /**
- * @brief      Cria um grafo vazio com capacidade máxima de vértices especificada
- * @param[in]  maxLigacoes  Número máximo de vértices
- * @return     Apontador para o grafo alocado, ou NULL em caso de falha de malloc
+ * @brief Cria um novo grafo para uma determinada frequência, ou retorna um existente.
+ *
+ * Esta função verifica se já existe um grafo com a frequência especificada dentro
+ * da rede. Caso exista, retorna o apontador para esse grafo. Caso contrário, cria
+ * um novo grafo, inicializa os seus campos e adiciona-o à lista de grafos da rede.
+ *
+ * @param rede Apontador para a estrutura REDE onde o grafo será criado ou procurado.
+ * @param freq Frequência associada ao grafo a ser criado.
+ *
+ * @return Apontador para o grafo correspondente à frequência especificada,
+ *         ou NULL se ocorrer erro na alocação de memória.
  */
-GRAFO* criarGrafo(int maxLigacoes) {
-	GRAFO* grafo = (GRAFO*)malloc(sizeof(GRAFO));
-	if (grafo == NULL)
-	{
-		return NULL;
+GRAFO* criarGrafo(REDE* rede, char freq) {
+	if (rede == NULL) return NULL;
+
+	GRAFO* atual = rede->listaGrafos;
+	while (atual != NULL) {
+		if (atual->frequencia == freq) {
+			return atual;
+		}
+		atual = atual->prox;
 	}
-	grafo->vertices = (VERTICE**)malloc(sizeof(VERTICE*) * maxLigacoes);
-	if (grafo->vertices == NULL)
-	{
-		free(grafo);
-		return NULL;
-	}
-	for (int i = 0; i < grafo->maxLigacoes; i++)
-	{
-		grafo->vertices[i] = NULL;
-	}
-	grafo->numVertices = 0;
-	grafo->maxLigacoes = maxLigacoes;
-	
-	return grafo;
+	// Caso não exista a frequencia inserida
+
+	GRAFO* novoGrafo = (GRAFO*)malloc(sizeof(GRAFO));
+	if (novoGrafo == NULL) return NULL;
+
+	novoGrafo->vertices = NULL;
+	novoGrafo->numVertices = 0;
+	novoGrafo->frequencia = freq;
+	novoGrafo->prox = rede->listaGrafos;
+	rede->listaGrafos = novoGrafo;
+
+	return novoGrafo;
 }
 
+
 /**
- * @brief      Cria uma nova rede de grafos, inicializando todos os grafos a NULL
- * @return     Apontador para a rede alocada, ou NULL em caso de falha de malloc
+ * @brief Cria e inicializa uma nova estrutura de rede.
+ *
+ * Esta função aloca memória para uma nova estrutura REDE, inicializando o campo
+ * "listaGrafos" com NULL, indicando que ainda não existem grafos associados.
+ *
+ * @return Apontador para a nova estrutura REDE criada, ou NULL se a alocação de memória falhar.
  */
 REDE* criarRede() {
 	REDE* rede = (REDE*)malloc(sizeof(REDE));
-	if (!rede) return NULL;
-
-	for (int i = 0; i < MAX_FREQ; i++)
-		rede->grafos[i] = NULL;
-
+	if (rede == NULL)
+	{
+		return NULL;
+	}
+	rede->listaGrafos = NULL;
 	return rede;
 }
 
@@ -111,171 +130,100 @@ REDE* criarRede() {
 #pragma region Funções de Manipulação
 
 /**
- * @brief      Insere uma antena no grafo correspondente à frequência fornecida
- *             Se o grafo não existir, cria-o. Se já existir antena nas mesmas coordenadas, retorna erro
- * @param[in]  rede        -> Apontador para a rede de grafos
- * @param[in]  freqAntena  -> Frequência da antena (caracter 'A'..'Z')
- * @param[in]  x           -> Coordenada X da antena
- * @param[in]  y           -> Coordenada Y da antena
- * @return     0 caso sucesso, 1 em caso de erro (frequência inválida, falha de malloc, ou antena duplicada)
+ * @brief Insere uma nova antena num grafo, caso ainda não exista.
+ *
+ * Esta função verifica se já existe uma antena no grafo com a mesma frequência
+ * e coordenadas. Se não existir, cria uma nova antena e um novo vértice, e insere
+ * esse vértice na lista de vértices do grafo. A contagem de vértices é atualizada.
+ *
+ * @param grafo Apontador para o grafo onde a antena será inserida.
+ * @param frequencia Carácter que representa a frequência da antena.
+ * @param x Coordenada X da antena.
+ * @param y Coordenada Y da antena.
+ *
+ * @return 0 se a inserção for bem-sucedida, ou 1 se a antena já existir,
+ *         se ocorrer erro de alocação de memória, ou se o grafo for inválido.
  */
-int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y){
+int inserirAntenaRedeGrafos(GRAFO* grafo, char frequencia, int x, int y) {
 
-	int indiceGrafo = freqAntena - 'A'; // Converte uma letra num indice numérico de 0 a 25
-
-	if (indiceGrafo < 0 || indiceGrafo > MAX_FREQ)
+	if (!grafo)
 	{
-
 		return 1;
 	}
+	// Verificar se antena existe na lista
 
-	// Caso não exista o grafo para a frequencia, cria-lo
+	VERTICE* atual = grafo->vertices;
 
-	if (rede->grafos[indiceGrafo]==NULL)
-	{
-		rede->grafos[indiceGrafo] = (GRAFO*)malloc(sizeof(GRAFO));
-		if (rede->grafos[indiceGrafo] == NULL)
-		{
+	while (atual) {
+
+		if (atual->infoAntenas && atual->infoAntenas->frequencia == frequencia &&
+			atual->infoAntenas->x == x &&
+			atual->infoAntenas->y == y) {
 			return 1;
 		}
-		rede->grafos[indiceGrafo]->numVertices = 0;
-		rede->grafos[indiceGrafo]->maxLigacoes = MAX_DIM;
-		rede->grafos[indiceGrafo]->vertices = (VERTICE**)malloc(sizeof(VERTICE*) * MAX_DIM);
+		atual = atual->prox;
 	}
 
-	GRAFO* grafo = rede->grafos[indiceGrafo];
-
-	// Verifica se a antena já existe
-	for (int i = 0; i < grafo->numVertices; i++) {
-		if (grafo->vertices[i]->infoAntenas->x == x && grafo->vertices[i]->infoAntenas->y == y)
-			return 1; // Já existe
-	}
-
-	ANTENAS* novaAntena = criarAntena(freqAntena, x, y);
-	if (!novaAntena) 
+	ANTENAS* novaAntena = criarAntena(frequencia, x, y);
+	if (!novaAntena)
 	{
 		return 1;
 	}
 
 	VERTICE* novoVertice = criarVertice(novaAntena);
-	if (novoVertice == NULL)
+	if (!novoVertice)
 	{
 		free(novaAntena);
 		return 1;
 	}
-	 
-	if (grafo->vertices == NULL)
-	{
-		return 1;
-	}
-	// Inserir as antenas de forma ordenada através das coordenadas
-	// Encontrar a posição correta
-	int posicao = 0;
-	while (posicao < grafo->numVertices) {
-		int xExistente = grafo->vertices[posicao]->infoAntenas->x;
-		int yExistente = grafo->vertices[posicao]->infoAntenas->y;
 
-		if (x < xExistente || (x == xExistente && y < yExistente))
-		{
-			break;
-		}
-		posicao++;
-	}
-
-	// Deslocar os elementos para a direita
-	for (int i = grafo->numVertices; i > posicao; i--)
-	{
-		grafo->vertices[i] = grafo->vertices[i - 1];
-	}
-
-	grafo->vertices[posicao] = novoVertice;
+	novoVertice->prox = grafo->vertices;
+	grafo->vertices = novoVertice;
 	grafo->numVertices++;
 
 	return 0;
-    
 }
 
 /**
- * @brief      Conecta dois vértices no grafo criando arestas bidirecionais
- * @param[in]  grafo   -> Apontador para o grafo
- * @param[in]  origem  -> Índice do vértice de origem no vetor vertices[]
- * @param[in]  destino -> Índice do vértice de destino no vetor vertices[]
- * @return     0 caso sucesso, 1 em caso de erro (grafo NULL ou índices inválidos ou falha de malloc)
+ * @brief Conecta dois vértices de um grafo, criando uma conexão bidirecional entre dois vértices.
+ *
+ * Esta função procura dois vértices no grafo com base nas suas coordenadas
+ * e cria arestas entre eles em ambas as direções, representando uma ligação
+ * bidirecional. As arestas são inseridas nas listas de adjacência dos vértices.
+ *
+ * @param grafo Apontador para o grafo onde os vértices se encontram.
+ * @param x1 Coordenada X do primeiro vértice.
+ * @param y1 Coordenada Y do primeiro vértice.
+ * @param x2 Coordenada X do segundo vértice.
+ * @param y2 Coordenada Y do segundo vértice.
+ *
+ * @return 0 se a conexão for bem-sucedida, ou 1 se algum dos vértices não for encontrado,
+ *         se o grafo for inválido, ou se ocorrer falha na alocação de memória.
  */
-int conectarVertices(GRAFO* grafo, int origem, int destino){
-if (grafo == NULL)
-{
-	return 1;
-}
-if (origem < 0 || destino < 0 || origem >= grafo->numVertices || destino >= grafo->numVertices)
-{
-	return 1;
-}
-// Cria aresta de origem para destino
-ARESTA* novaAresta = (ARESTA*)malloc(sizeof(ARESTA));
-if (novaAresta == NULL)
-{
-	return 1;
-}
-novaAresta->destino = destino;
-novaAresta->prox = grafo->vertices[origem]->adjacentes; 
-grafo->vertices[origem]->adjacentes = novaAresta; 
-
-// Cria aresta de destino para origem
-ARESTA* novaArestaInversa = (ARESTA*)malloc(sizeof(ARESTA));
-if (novaArestaInversa == NULL)
-{
-	return 1;
-}
-novaArestaInversa->destino = origem;
-novaArestaInversa->prox = grafo->vertices[destino]->adjacentes;
-grafo->vertices[destino]->adjacentes = novaArestaInversa; 
-
-return 0; //Sucesso
-}
-
-int conectarVerticesAuto(GRAFO* grafo) {
-
-	if (grafo == NULL)
-	{
+int conectarVertices(GRAFO* grafo, int x1, int y1, int x2, int y2) {
+	if (grafo == NULL || grafo->vertices == NULL)
 		return 1;
-	}
 
-	for (int i = 0; i < grafo->numVertices ; i++)
-	{
-		for (int j = 0; j < grafo->numVertices; j++)
-		{
-			if ((conectarVertices(grafo, i, j) != 0))
-			{
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
+	VERTICE* v1 = encontrarVertice(grafo, x1, y1);
+	VERTICE* v2 = encontrarVertice(grafo, x2, y2);
 
-/**
- * @brief      Verifica se existe uma antena no grafo com mesma frequência e coordenadas
- * @param[in]  grafo       -> Apontador para o grafo
- * @param[in]  freqAntena  -> Frequência da antena a pesquisar
- * @param[in]  x           -> Coordenada X
- * @param[in]  y           -> Coordenada Y
- * @return     0 se existir (antena encontrada), 1 se não existir
- */
-int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y) {
-	if (grafo->vertices == NULL)
-	{
-		return 1;
-	}
-	for (int i = 0; i < grafo->numVertices; i++)
-	{
-		ANTENAS* auxVar = grafo->vertices[i]->infoAntenas;
-		if (auxVar->frequencia == freqAntena && auxVar->x == x && auxVar->y == y)
-		{
-			return 0;
-		}
-	}
-	return 0;
+	if (!v1 || !v2) return 1;
+
+	// Cria aresta de origem para destino
+	ARESTA* a1 = (ARESTA*)malloc(sizeof(ARESTA));
+	if (a1 == NULL) return 1;
+	a1->destino = v2;
+	a1->prox = v1->adjacentes;
+	v1->adjacentes = a1;
+
+	// Cria aresta de destino para origem
+	ARESTA* a2 = (ARESTA*)malloc(sizeof(ARESTA));
+	if (a2 == NULL) return 1;
+	a2->destino = v1;
+	a2->prox = v2->adjacentes;
+	v2->adjacentes = a2;
+
+	return 0; //Sucesso
 }
 
 /**
@@ -286,7 +234,7 @@ int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y) {
  * @param[in]  numFreqs       -> Número de frequências válidas em freqsAntenas[]
  * @return     0 caso sucesso, 1 em caso de redeGrafos NULL
  */
-int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs) {
+int mostrarRedeGrafos(REDE* redeGrafos) {
 
 	if (redeGrafos == NULL)
 	{
@@ -299,32 +247,34 @@ int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs) {
 			matriz[i][j] = '.';
 		}
 	}
-	for (int i = 0; i < numFreqs; i++) {
-			char freq = freqsAntenas[i];
-			int indiceGrafo = freq - 'A';
-			GRAFO* grafo = redeGrafos->grafos[indiceGrafo];
 
-			if (grafo == NULL) continue;
+	GRAFO* grafoAtual = redeGrafos->listaGrafos;
 
-			for (int i = 0; i < grafo->numVertices; i++){
-				int x = grafo->vertices[i]->infoAntenas->x;
-				int y = grafo->vertices[i]->infoAntenas->y;
-				char freq = grafo->vertices[i]->infoAntenas->frequencia;
-				if (x >= 0 && x < MAX_DIM && y >= 0 && y < MAX_DIM)
-				{
-					matriz[x][y] = freq;
-				}
-			}
-	}
-		for (int i = 0; i < MAX_DIM; i++) {
-			for (int j = 0; j < MAX_DIM; j++)
+	while (grafoAtual != NULL) {
+		VERTICE* verticeAtual = grafoAtual->vertices;
+		while (verticeAtual != NULL) {
+
+			int x = verticeAtual->infoAntenas->x;
+			int y = verticeAtual->infoAntenas->y;
+			char freq = verticeAtual->infoAntenas->frequencia;
+
+			if (x >= 0 && x < MAX_DIM && y >= 0 && y < MAX_DIM)
 			{
-				printf("%c", matriz[i][j]);
+				matriz[x][y] = freq;
 			}
-			printf("\n");
+			verticeAtual = verticeAtual->prox;
 		}
+		grafoAtual = grafoAtual->prox;
+	}
 
-		return 1;
+	for (int i = 0; i < MAX_DIM; i++) {
+		for (int j = 0; j < MAX_DIM; j++) {
+			printf("%c", matriz[i][j]);
+		}
+		printf("\n");
+	}
+
+	return 1;
 }
 
 /**
@@ -334,52 +284,120 @@ int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs) {
  * @param[in]  ficheiroTexto   -> Nome do ficheiro de texto a ler
  * @return     0 em sucesso, -1 em caso de falha ao abrir o ficheiro
  */
-int lerFicheiroTexto(REDE* rede, char* ficheiroTexto) {
-	FILE* fp = fopen(ficheiroTexto, "r");
-	if (fp == NULL)
-	{
-		return -1; // Se retornar -1 existe erro ao abrir o ficheiro de texto
-	}
+int lerFicheiroTexto(REDE* rede, char* filename) {
+	FILE* fp = fopen(filename, "r");
+	if (!fp) return -1;
 
-	char linha[MAX_DIM + 2];
-	for (int i = 0; i < MAX_DIM; i++)
-	{
-		if (fgets(linha, sizeof(linha), fp) == NULL) break;
+	for (int i = 0; i < MAX_DIM; i++) {
+		for (int j = 0; j < MAX_DIM; j++) {
+			int ch = fgetc(fp);
+			if (ch == EOF) {
+				fclose(fp);
+				return 0;
+			}
 
-		for (int j = 0; j < MAX_DIM; j++)
-		{
-			if (linha[j] == '\n' || linha[j] == '\0') break;
-			char frequencia = linha[j];
-			int x = i;
-			int y = j;
-			// Assim que encontrada a frequencia os valores de x e y serão encaminhados para a função de inserirAntenasRedeGrafos
-			if (frequencia >= 'A' && frequencia <= 'Z')
-			{
-				inserirAntenaRedeGrafos(rede, frequencia, x, y);
+			if (ch == '\n') {
+				j--;
+				continue;
+			}
+
+			if (ch >= 'A' && ch <= 'Z') {
+				GRAFO* grafo = criarGrafo(rede, ch);
+				if (!grafo) {
+					fclose(fp);
+					return -1;
+				}
+				inserirAntenaRedeGrafos(grafo, ch, i, j);
 			}
 		}
+		// Ignora eventual \n após cada linha (caso não tenha sido lido dentro do loop)
+		fgetc(fp);
 	}
-
 	fclose(fp);
 	return 0;
 }
 
-/**
- * @brief      Encontra o índice de um vértice no grafo com base nas coordenadas
- * @param[in]  grafo  -> Apontador para o grafo
- * @param[in]  x      -> Coordenada X do vértice
- * @param[in]  y      -> Coordenada Y do vértice
- * @return     Índice do vértice (0..numVertices-1) se encontrado, ou -1 caso contrário
- */
-int encontrarIndiceVertice(GRAFO* grafo, int x, int y) {
 
-	for (int i = 0; i < grafo->numVertices; i++)
-	{
-		if (grafo->vertices[i]->infoAntenas->x == x && grafo->vertices[i]->infoAntenas->y) {
-			return i;
+/**
+ * @brief Procura um vértice no grafo pelas coordenadas da antena.
+ *
+ * Esta função percorre a lista de vértices do grafo procurando um vértice
+ * cuja antena tenha as coordenadas (x, y) especificadas.
+ *
+ * @param grafo Apontador para o grafo onde a pesquisa será realizada.
+ * @param x Coordenada X da antena procurada.
+ * @param y Coordenada Y da antena procurada.
+ *
+ * @return Apontador para o vértice encontrado, ou NULL se nenhum vértice com as
+ *         coordenadas fornecidas existir no grafo.
+ */
+VERTICE* encontrarVertice(GRAFO* grafo, int x, int y) {
+	VERTICE* vertice = grafo->vertices;
+	while (vertice != NULL) {
+		if (vertice->infoAntenas->x == x && vertice->infoAntenas->y == y)
+		{
+			return vertice;
 		}
+		vertice = vertice->prox;
 	}
-	return -1;
+	return NULL;
+}
+
+bool guardarGrafoBin(VERTICE* head, char* filename) {
+
+	if (head == NULL) return false;
+
+	FILE* fp;
+	fp = fopen(filename, "wb");
+	if (fp == NULL) return false;
+
+	VERTICE* aux = head;
+	VerticeFICHEIRO auxFicheiro;	//estrutura de vertice para gravar em ficheiro
+
+	while (aux != NULL) {
+
+		auxFicheiro.frequencia = aux->infoAntenas->frequencia;
+		auxFicheiro.x = aux->infoAntenas->x;
+		auxFicheiro.y = aux->infoAntenas->y;
+
+		if (fwrite(&auxFicheiro, sizeof(VerticeFICHEIRO), 1, fp) != 1) {
+			fclose(fp);
+			return false;
+		}
+
+		// Guarda as as conexões entre vértices no mesmo ficheiro
+		if (aux->adjacentes) {
+			if (!guardarArestas(aux->adjacentes, fp, aux->infoAntenas->x, aux->infoAntenas->y)) {
+				fclose(fp);
+				return false;
+			}
+		}
+		aux = aux->prox;
+	}
+	fclose(fp);
+	return true;
+}
+
+int guardarArestas(ARESTA* head, FILE* fp, int xOrigem, int yOrigem) {
+	if (head == NULL) return -1;
+	if (fp == NULL) return -1;
+	
+	ARESTA* aux = head;
+	ArestasFICHEIRO auxFile; // Declare a local variable instead of using a pointer  
+
+	while (aux) {
+		auxFile.xOrigem = xOrigem;
+		auxFile.yOrigem = yOrigem;
+		auxFile.xDestino = aux->destino->infoAntenas->x;
+		auxFile.yDestino = aux->destino->infoAntenas->y;
+
+		if (fwrite(&auxFile, sizeof(ArestasFICHEIRO), 1, fp) != 1) {
+			return -1;
+		}
+		aux = aux->prox;
+	}
+
+	return 0;
 }
 
 /**
@@ -390,14 +408,27 @@ int encontrarIndiceVertice(GRAFO* grafo, int x, int y) {
 bool validarGrafo(GRAFO* grafo) {
 	if (!grafo) return false;
 	if (!grafo->vertices) return false;
-	if (grafo->numVertices <= 0 || grafo->numVertices > grafo->maxLigacoes) return false;
+	if (grafo->numVertices <= 0 || grafo->numVertices > grafo->maxVertices) return false;
 	for (int i = 0; i < grafo->numVertices; i++) {
-		if (!grafo->vertices[i]) return false;
-		if (!grafo->vertices[i]->infoAntenas) return false;
+		if (!grafo->vertices) return false;
+		if (!grafo->vertices->infoAntenas) return false;
 	}
 	return true;
 }
 
+GRAFO* encontrarGrafoPorFrequencia(REDE* rede, char freq) {
+	if (rede == NULL || rede->listaGrafos == NULL)
+		return NULL;
+
+	GRAFO* atual = rede->listaGrafos;
+	while (atual != NULL) {
+		if (atual->frequencia == freq)
+			return atual;
+		atual = atual->prox;
+	}
+
+	return NULL;  // Grafo com a frequência não encontrado
+}
 #pragma endregion
 
 #pragma region Funções Auxiliares para o BFS
@@ -417,7 +448,6 @@ void criarFila(FILA* fila) {
  */
 bool filaVazia(FILA* fila) {
 	return(fila->frente == NULL);
-	return true;
 }
 
 /**
@@ -450,7 +480,7 @@ bool enfilarVertice(FILA* fila, VERTICE* vertice) {
 VERTICE* desenfilarVertice(FILA* fila) {
 	if (filaVazia(fila))
 	{
-		return false;
+		return NULL;
 	}
 	VERTICE* vertice;
 	vertice = fila->frente;
@@ -460,7 +490,7 @@ VERTICE* desenfilarVertice(FILA* fila) {
 		fila->tras = NULL;
 	}
 	vertice->prox = NULL;
-	
+
 	return vertice;
 }
 
@@ -474,46 +504,35 @@ VERTICE* desenfilarVertice(FILA* fila) {
  * @param[out] resultado  Array (tamanho MAX_ANTENAS) que irá conter os índices dos vértices visitados
  * @return     0 caso sucesso; 1 se o grafo for NULL, vazio, ou se a antena inicial não existir
  */
-int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]) {
-	if (!grafo|| grafo->numVertices == 0)
+int BFS(GRAFO* grafo, int x, int y, int* count) {
+	if (!grafo || grafo->numVertices == 0)
 	{
 		return 1;
 	}
 	*count = 0;
 
-	// É necessário encontra o índice do vértice
-	int indice = encontrarIndiceVertice(grafo, x, y);
+	VERTICE* inicio = encontrarVertice(grafo, x, y);
+	if (!inicio) return 1;
 
-	if (indice == -1) {
-		// vértice de partida não está no grafo
-		return 1;
+	VERTICE* vertice = grafo->vertices;
+	while (vertice) {
+		vertice->visitado = 0;
+		vertice = vertice->prox;
 	}
 
 	FILA fila;
 	criarFila(&fila);
 
-	for (int i = 0; i < grafo->numVertices; i++)
-	{
-		grafo->vertices[i]->visitado = 0;
-		// Para certificar que o campo proximo é nulo antes começar a procura
-		grafo->vertices[i]->prox = NULL; 
-	}
-
-	VERTICE* inicio = grafo->vertices[indice];
 	inicio->visitado = 1;
 	enfilarVertice(&fila, inicio);
 
 	while (!filaVazia(&fila)) {
 		VERTICE* atual = desenfilarVertice(&fila);
-
-		int indiceAtual = encontrarIndiceVertice(grafo, atual->infoAntenas->x, atual->infoAntenas->y);
-		resultado[*count] = indiceAtual;
 		(*count)++;
 
 		ARESTA* adj = atual->adjacentes;
-
 		while (adj) {
-			VERTICE* vizinho = grafo->vertices[adj->destino];
+			VERTICE* vizinho = adj->destino;
 			if (!vizinho->visitado)
 			{
 				vizinho->visitado = 1;
@@ -528,31 +547,3 @@ int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]) {
 
 #pragma endregion
 
-#pragma region Funções de Validação de Inserção
-
-int lerCoordenada(const char* nomeCoordenada) {
-	int valor;
-	while (1) {
-		printf("Digite a coordenada %s: ", nomeCoordenada);
-		if (scanf_s("%d", &valor) == 1) break;
-
-		printf("Entrada invalida! Insira um numero inteiro.\n");
-	}
-	return valor;
-}
-
-char lerFrequencia() {
-	char freq;
-	while (1) {
-		printf("Digite a frequencia da antena (A-Z): ");
-		// Limpar o buffer de entrada corretamente
-		while ((getchar()) != '\n'); 
-
-		if (scanf_s("%c", &freq, 1) == 1 && freq >= 'A' && freq <= 'Z') break;
-
-		printf("Erro! Insira uma letra maiuscula entre A e Z.\n");
-	}
-	return freq;
-}
-
-#pragma endregion
