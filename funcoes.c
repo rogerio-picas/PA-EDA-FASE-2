@@ -24,10 +24,10 @@
   * e as coordenadas (x, y) da antena e retorna um apontador para a estrutura criada.
   *
   * @param freqAntena Carácter que representa a frequência da antena.
-  * @param x Coordenada X da antena.
-  * @param y Coordenada Y da antena.
+  * @param x coordenada X da antena.
+  * @param y coordenada Y da antena.
   *
-  * @return Apontador para a nova estrutura ANTENAS criada, ou NULL se a alocação de memória falhar.
+  * @return cpontador para a nova estrutura ANTENAS criada, ou NULL se a alocação de memória falhar.
   */
 ANTENAS* criarAntena(char freqAntena, int x, int y) {
 
@@ -113,7 +113,7 @@ GRAFO* criarGrafo(REDE* rede, char freq) {
  * Esta função aloca memória para uma nova estrutura REDE, inicializando o campo
  * "listaGrafos" com NULL, indicando que ainda não existem grafos associados.
  *
- * @return Apontador para a nova estrutura REDE criada, ou NULL se a alocação de memória falhar.
+ * @return apontador para a nova estrutura REDE criada, ou NULL se a alocação de memória falhar.
  */
 REDE* criarRede() {
 	REDE* rede = (REDE*)malloc(sizeof(REDE));
@@ -136,10 +136,10 @@ REDE* criarRede() {
  * e coordenadas. Se não existir, cria uma nova antena e um novo vértice, e insere
  * esse vértice na lista de vértices do grafo. A contagem de vértices é atualizada.
  *
- * @param grafo Apontador para o grafo onde a antena será inserida.
- * @param frequencia Carácter que representa a frequência da antena.
- * @param x Coordenada X da antena.
- * @param y Coordenada Y da antena.
+ * @param grafo apontador para o grafo onde a antena será inserida.
+ * @param frequencia caracter que representa a frequência da antena.
+ * @param x coordenada X da antena.
+ * @param y coordenada Y da antena.
  *
  * @return 0 se a inserção for bem-sucedida, ou 1 se a antena já existir,
  *         se ocorrer erro de alocação de memória, ou se o grafo for inválido.
@@ -191,11 +191,11 @@ int inserirAntenaRedeGrafos(GRAFO* grafo, char frequencia, int x, int y) {
  * e cria arestas entre eles em ambas as direções, representando uma ligação
  * bidirecional. As arestas são inseridas nas listas de adjacência dos vértices.
  *
- * @param grafo Apontador para o grafo onde os vértices se encontram.
- * @param x1 Coordenada X do primeiro vértice.
- * @param y1 Coordenada Y do primeiro vértice.
- * @param x2 Coordenada X do segundo vértice.
- * @param y2 Coordenada Y do segundo vértice.
+ * @param grafo apontador para o grafo onde os vértices se encontram.
+ * @param x1 coordenada X do primeiro vértice.
+ * @param y1 coordenada Y do primeiro vértice.
+ * @param x2 coordenada X do segundo vértice.
+ * @param y2 coordenada Y do segundo vértice.
  *
  * @return 0 se a conexão for bem-sucedida, ou 1 se algum dos vértices não for encontrado,
  *         se o grafo for inválido, ou se ocorrer falha na alocação de memória.
@@ -281,10 +281,10 @@ int mostrarRedeGrafos(REDE* redeGrafos) {
  * @brief      Lê um ficheiro de texto contendo uma matriz de caracteres que representa antenas
  *             em posições X,Y. Insere cada caracter 'A'..'Z' como nova antena no grafo respectivo
  * @param[in]  rede            -> Apontador para a rede de grafos
- * @param[in]  ficheiroTexto   -> Nome do ficheiro de texto a ler
+ * @param[in]  filename   -> Nome do ficheiro de texto a ler
  * @return     0 em sucesso, -1 em caso de falha ao abrir o ficheiro
  */
-int lerFicheiroTexto(REDE* rede, char* filename) {
+int carregaGrafo(REDE* rede, char* filename) {
 	FILE* fp = fopen(filename, "r");
 	if (!fp) return -1;
 

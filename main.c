@@ -18,7 +18,7 @@ int main() {
 	char* ficheiroBin = "grafo.bin";
 
 	// Carrega ficheiro (que pode criar grafos)
-	lerFicheiroTexto(rede, ficheiroTexto);
+	carregaGrafo(rede, ficheiroTexto);
 
 	// Criação de grafos por frequencia:
 	GRAFO* grafoA = criarGrafo(rede, 'A');
@@ -68,6 +68,7 @@ int main() {
 		listarGrafos = listarGrafos->prox;
 	}
 
+	// Guardar grafos para ficheiro binario
 	bool binGrafoA = guardarGrafoBin(grafoA->vertices, ficheiroBin);
 	bool binGrafoB = guardarGrafoBin(grafoB->vertices, ficheiroBin);
 	if (!binGrafoA || !binGrafoB)
