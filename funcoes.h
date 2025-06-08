@@ -9,39 +9,33 @@
  * @version 1.0
  *
  */
-
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdbool.h>
 
 
  /** @def MAX_DIM
   *  @brief Dimensão da matriz da cidade.
   */
-
 #define MAX_DIM 20
 
   /** @def MAX_ANTENAS
    *  @brief Número máximo de antenas.
    */
-
 #define MAX_ANTENAS 50
 
-   /** @def MAX_FREQ
-	*  @brief Número máximo de frequências (de A a Z).
-	*/
-
-#define MAX_FREQ 26
+#define MAX_VERTICES 20
 
 
 #pragma region Estruturas
 
-    /**
-     * @struct Antenas
-     * @brief Representa uma antena com frequência e posição na matriz.
-     */
+   /**
+	* @struct Antenas
+	* @brief Representa uma antena com frequência e posição na matriz.
+	*/
 typedef struct Antenas {
-    char frequencia; /** Frequência da antena (A-Z) */
-    int x;           /** Coordenada X na matriz */
-    int y;           /** Coordenada Y na matriz */
+	char frequencia; /** Frequência da antena (A-Z) */
+	int x;           /** Coordenada X na matriz */
+	int y;           /** Coordenada Y na matriz */
 } ANTENAS;
 
 /**
@@ -49,8 +43,8 @@ typedef struct Antenas {
  * @brief Representa uma aresta entre vértices (antenas).
  */
 typedef struct Aresta {
-    int destino;             /** Índice do vértice de destino */
-    struct Aresta* prox;     /** Apontador para a próxima aresta (lista ligada) */
+	struct Vertice* destino;
+	struct Aresta* prox;
 } ARESTA;
 
 /**
@@ -58,20 +52,19 @@ typedef struct Aresta {
  * @brief Representa um vértice no grafo, contendo uma antena e as suas ligações.
  */
 typedef struct Vertice {
-    ANTENAS* infoAntenas;    /** Informação da antena associada ao vértice */
-    ARESTA* adjacentes;      /** Lista de arestas (ligações a outras antenas) */
-    int visitado;            /** Campo utilizado para marcar se o vertice foi visitado ou não */
-    struct Vertice* prox;    /** Necessário para percorrer os vértices para procurar */
+	ANTENAS* infoAntenas;    /** Informação da antena associada ao vértice */
+	ARESTA* adjacentes;      /** Lista de arestas (ligações a outras antenas) */
+	int visitado;            /** Campo utilizado para marcar se o vertice foi visitado ou não */
+	struct Vertice* prox;    /** Necessário para percorrer os vértices para procurar */
 } VERTICE;
 
-/**
- * @struct Grafo
- * @brief Representa um grafo com vértices ligados por arestas.
- */
+
 typedef struct Grafo {
-    VERTICE** vertices;      /** Lista de apontadores para vértices */
-    int maxLigacoes;         /** Número máximo de ligações/vértices */
-    int numVertices;         /** Número atual de vértices no grafo */
+	char frequencia;
+	VERTICE* vertices;
+	int maxVertices;         /** Número máximo de ligações/vértices */
+	int numVertices;         /** Número atual de vértices no grafo */
+	struct Grafo* prox;
 } GRAFO;
 
 /**
@@ -81,16 +74,29 @@ typedef struct Grafo {
  * A fila usa o campo 'prox' em cada VERTICE para encadear os vértices na estrutura
  */
 typedef struct Fila {
-    VERTICE* frente;  /**< Apontador para o vértice no início da fila */
-    VERTICE* tras;    /**< Apontador para o vértice no fim da fila */
+	VERTICE* frente;  /**< Apontador para o vértice no início da fila */
+	VERTICE* tras;    /**< Apontador para o vértice no fim da fila */
 } FILA;
 /**
  * @struct Rede_Grafos
  * @brief Conjunto de grafos separados por frequência.
  */
 typedef struct Rede_Grafos {
-    GRAFO* grafos[MAX_FREQ]; /** Vetor de grafos, um por frequência de 'A' a 'Z' */
+	GRAFO* listaGrafos;
 } REDE;
+
+typedef struct VerticeFicheiro {
+	char frequencia;
+	int x;
+	int y;
+}VerticeFICHEIRO;
+
+typedef struct ArestasFicheiro {
+	int xOrigem;
+	int yOrigem;
+	int xDestino;
+	int yDestino;
+}ArestasFICHEIRO;
 
 #pragma endregion
 
@@ -120,7 +126,7 @@ VERTICE* criarVertice(ANTENAS* antena);
  * @return Apontador para o grafo criado.
  */
 
-GRAFO* criarGrafo(int maxLigacoes);
+GRAFO* criarGrafo(REDE* rede, char freq);
 
 /**
  * @brief Cria uma nova rede de grafos inicializada a NULL.
@@ -141,7 +147,7 @@ REDE* criarRede();
  * @param y Coordenada Y
  * @return 0 se inserção for bem-sucedida, 1 em caso de erro
  */
-int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
+int inserirAntenaRedeGrafos(GRAFO* grafo, char frequencia, int x, int y);
 
 /**
  * @brief Conecta dois vértices num grafo com uma aresta bidirecional
@@ -150,19 +156,7 @@ int inserirAntenaRedeGrafos(REDE* rede, char freqAntena, int x, int y);
  * @param destino Índice do vértice de destino
  * @return 0 se bem-sucedido, 1 em caso de erro
  */
-int conectarVertices(GRAFO* grafo, int origem, int destino);
-
-int conectarVerticesAuto(GRAFO* grafo);
-
-/**
- * @brief Verifica se uma antena já existe no grafo
- * @param grafo Apontador para o grafo
- * @param freqAntena Frequência da antena
- * @param x Coordenada X
- * @param y Coordenada Y
- * @return 0 se existir, 1 se não existir
- */
-int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y);
+int conectarVertices(GRAFO* grafo, int x1, int y1, int x2, int y2);
 
 /**
  * @brief Mostra a rede de grafos numa matriz, com base nas frequências especificadas
@@ -171,16 +165,9 @@ int antenaExiste(GRAFO* grafo, char freqAntena, int x, int y);
  * @param numFreqs Número de frequências no vetor
  * @return 0 se bem-sucedido, 1 se erro
  */
-int mostrarRedeGrafos(REDE* redeGrafos, char freqsAntenas[], int numFreqs);
+int mostrarRedeGrafos(REDE* redeGrafos);
 
-/**
- * @brief Encontra o índice de um vértice no grafo com base nas coordenadas
- * @param grafo Apontador para o grafo
- * @param x Coordenada X
- * @param y Coordenada Y
- * @return Índice do vértice ou -1 se não encontrado
- */
-int encontrarIndiceVertice(GRAFO* grafo, int x, int y);
+GRAFO* encontrarGrafoPorFrequencia(REDE* rede, char freq);
 
 /**
  * @brief Lê um ficheiro de texto com a matriz de antenas e carrega na rede
@@ -188,7 +175,16 @@ int encontrarIndiceVertice(GRAFO* grafo, int x, int y);
  * @param ficheiroTexto Nome do ficheiro
  * @return 0 se bem-sucedido, 1 em caso de erro
  */
-int lerFicheiroTexto(REDE* rede, char* ficheiroTexto);
+int lerFicheiroTexto(REDE* rede, char* filename);
+
+VERTICE* encontrarVertice(GRAFO* grafo, int x, int y);
+
+
+int guardarArestas(ARESTA* head, FILE* fp, int xOrigem, int yOrigem);
+
+
+bool guardarGrafoBin(VERTICE* head, char* filename);
+
 
 #pragma endregion
 
@@ -231,7 +227,7 @@ VERTICE* desenfilarVertice(FILA* fila);
  *                         na ordem em que foram alcançados pela BFS
  * @return     0 em caso de sucesso (BFS executada), 1 em caso de grafo inválido ou antena inicial não encontrada
  */
-int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]);
+int BFS(GRAFO* grafo, int x, int y, int* count);
 
 /**
  * @brief      Verifica se um grafo é válido (não é NULL e contém pelo menos um vértice)
@@ -239,13 +235,5 @@ int BFS(GRAFO* grafo, int x, int y, int* count, int resultado[MAX_ANTENAS]);
  * @return     true se o grafo for válido (não NULL e numVertices > 0), caso contrário false
  */
 bool validarGrafo(GRAFO* grafo);
-
-#pragma endregion
-
-#pragma region Funções de Validação de Inserção
-
-int lerCoordenada(const char* nomeCoordenada);
-
-char lerFrequencia();
 
 #pragma endregion

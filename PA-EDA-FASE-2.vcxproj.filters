@@ -30,4 +30,9 @@
   <ItemGroup>
     <Text Include="antenas.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="grafo.bin">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
