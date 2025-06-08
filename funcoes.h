@@ -175,7 +175,7 @@ GRAFO* encontrarGrafoPorFrequencia(REDE* rede, char freq);
  * @param ficheiroTexto Nome do ficheiro
  * @return 0 se bem-sucedido, 1 em caso de erro
  */
-int lerFicheiroTexto(REDE* rede, char* filename);
+int carregaGrafo(REDE* rede, char* filename);
 
 VERTICE* encontrarVertice(GRAFO* grafo, int x, int y);
 
