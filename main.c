@@ -7,10 +7,11 @@
  * @version 1.0
  *
  */
-#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS // fopen_s warning
 #include <stdio.h>
 #include <stdlib.h>
 #include "funcoes.h"
+#include <stdbool.h>
 
 int main() {
 	REDE* rede = criarRede();
@@ -26,31 +27,49 @@ int main() {
 
 	// Inserção de antenas nos grafos por frequencia
 	// Frequencia - A
-	inserirAntenaRedeGrafos(grafoA, 'A', 2, 5);
-	inserirAntenaRedeGrafos(grafoA, 'A', 4, 6);
-	inserirAntenaRedeGrafos(grafoA, 'A', 19, 17);
+	inserirAntenaGrafo(grafoA, 'A', 2, 5);
+	inserirAntenaGrafo(grafoA, 'A', 4, 6);
+	inserirAntenaGrafo(grafoA, 'A', 19, 17);
+
 	//Frequencia - B
-	inserirAntenaRedeGrafos(grafoB, 'B', 3, 6);
-	inserirAntenaRedeGrafos(grafoB, 'B', 5, 7);
-	inserirAntenaRedeGrafos(grafoB, 'B', 13, 6);
+	inserirAntenaGrafo(grafoB, 'B', 3, 6);
+	inserirAntenaGrafo(grafoB, 'B', 5, 7);
+	inserirAntenaGrafo(grafoB, 'B', 13, 6);
+	inserirAntenaGrafo(grafoB, 'B', 6, 3);
+	//Teste duplicada
+	inserirAntenaGrafo(grafoB, 'B', 6, 3);
+
 	//Conectar antenas na frequência A
 	conectarVertices(grafoA, 2, 5, 4, 6);
 	conectarVertices(grafoA, 19, 17, 4, 6);
 	conectarVertices(grafoA, 19, 17, 2, 5);
+	// Teste conexão
+	conectarVertices(grafoA, 19, 17, 5, 5);
+
 	//Conectar antenas na frequência B
 	conectarVertices(grafoB, 3, 6, 5, 7);
+	conectarVertices(grafoB, 6, 3, 5, 7);
+	conectarVertices(grafoB, 6, 3, 3, 6);
+	conectarVertices(grafoB, 6, 3, 13, 6);
 	conectarVertices(grafoB, 13, 6, 5, 7);
 	conectarVertices(grafoB, 13, 6, 3, 6);
 
-	// BFS
+	bool conexao = existeConexaoEntreVertices(grafoA, 2, 5, 4, 6);
+	if (!conexao)
+	{
+		printf("Nao existe conexao!\n");
+	}
+	else printf("Existe conexao!\n");
+
+	// BFT
 	int count = 0;
 
-	BFS(grafoA, 2, 5, &count);
+	BFT(grafoB, 3, 6, &count);
 
 	mostrarRedeGrafos(rede);
 
-	printf("\nAntenas visitadas na BFS (freq 'A'):\n");
-	VERTICE* v = grafoA->vertices;
+	printf("\nAntenas visitadas na BFT: \n");
+	VERTICE* v = grafoB->vertices;
 	while (v) {
 		if (v->visitado) {
 			printf("  (%d, %d), frequencia: %c\n",
@@ -64,7 +83,19 @@ int main() {
 	// Listagem de grafos pela frequencia e numero de vertices
 	GRAFO* listarGrafos = rede->listaGrafos;
 	while (listarGrafos != NULL) {
-		printf("Grafo com frequencia '%c', Numero de Vertices: %d\n", listarGrafos->frequencia, listarGrafos->numVertices);
+		printf("Grafo com frequencia '%c', Numero de Vertices: %d\n",
+			listarGrafos->frequencia,
+			listarGrafos->numVertices);
+
+		VERTICE* v = listarGrafos->vertices;
+		while (v != NULL) {
+			if (v->infoAntenas != NULL) {
+				printf("  Vertice coord: (%d, %d)\n",
+					v->infoAntenas->x,
+					v->infoAntenas->y);
+			}
+			v = v->prox;
+		}
 		listarGrafos = listarGrafos->prox;
 	}
 
@@ -75,6 +106,6 @@ int main() {
 	{
 		return false;
 	}
-	
+
 	return 0;
 }
