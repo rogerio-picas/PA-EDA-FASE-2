@@ -12,91 +12,101 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdbool.h>
 
-
  /** @def MAX_DIM
   *  @brief Dimensão da matriz da cidade.
   */
 #define MAX_DIM 20
 
-  /** @def MAX_ANTENAS
-   *  @brief Número máximo de antenas.
-   */
-#define MAX_ANTENAS 50
-
-#define MAX_VERTICES 20
-
-
 #pragma region Estruturas
 
    /**
-	* @struct Antenas
-	* @brief Representa uma antena com frequência e posição na matriz.
-	*/
+    * @struct Antenas
+    * @brief Representa uma antena com frequência e posição na matriz da cidade.
+    */
 typedef struct Antenas {
-	char frequencia; /** Frequência da antena (A-Z) */
-	int x;           /** Coordenada X na matriz */
-	int y;           /** Coordenada Y na matriz */
+    char frequencia; /**< Frequência da antena (A-Z) */
+    int x;           /**< Coordenada X na matriz */
+    int y;           /**< Coordenada Y na matriz */
 } ANTENAS;
 
 /**
  * @struct Aresta
- * @brief Representa uma aresta entre vértices (antenas).
+ * @brief Representa uma aresta (conexão) entre vértices no grafo.
  */
 typedef struct Aresta {
-	struct Vertice* destino;
-	struct Aresta* prox;
+    struct Vertice* destino; /**< Apontador para o vértice destino da aresta */
+    struct Aresta* prox;     /**< Apontador para a próxima aresta na lista ligada */
 } ARESTA;
 
 /**
  * @struct Vertice
- * @brief Representa um vértice no grafo, contendo uma antena e as suas ligações.
+ * @brief Representa um vértice no grafo, contendo a antena e as ligações.
  */
 typedef struct Vertice {
-	ANTENAS* infoAntenas;    /** Informação da antena associada ao vértice */
-	ARESTA* adjacentes;      /** Lista de arestas (ligações a outras antenas) */
-	int visitado;            /** Campo utilizado para marcar se o vertice foi visitado ou não */
-	struct Vertice* prox;    /** Necessário para percorrer os vértices para procurar */
+    ANTENAS* infoAntenas; /**< Apontador para a antena associada ao vértice */
+    ARESTA* adjacentes;   /**< Lista ligada das arestas (ligações) para outros vértices */
+    int visitado;         /**< Indicador se o vértice foi visitado */
+    struct Vertice* prox; /**< Apontador para o próximo vértice na lista do grafo */
 } VERTICE;
 
-
+/**
+ * @struct Grafo
+ * @brief Representa um grafo contendo uma lista de vértices e outras informações.
+ */
 typedef struct Grafo {
-	char frequencia;
-	VERTICE* vertices;
-	int maxVertices;         /** Número máximo de ligações/vértices */
-	int numVertices;         /** Número atual de vértices no grafo */
-	struct Grafo* prox;
+    char frequencia;     /**< Frequência comum a todas as antenas do grafo */
+    VERTICE* vertices;   /**< Apontador para a lista de vértices do grafo */
+    int maxVertices;     /**< Número máximo de vértices permitido no grafo */
+    int numVertices;     /**< Número atual de vértices no grafo */
+    struct Grafo* prox;  /**< Apontador para o próximo grafo na lista de grafos */
 } GRAFO;
 
 /**
+ * @struct NoFila
+ * @brief Nó da fila usado para BFT
+ */
+typedef struct NoFila {
+    VERTICE* vertice;   /**< Apontador para o vértice armazenado no nó da fila */
+    struct NoFila* prox;/**< Apontador para o próximo nó da fila */
+} NOFILA;
+
+/**
  * @struct Fila
- * @brief  Implementa uma fila dinâmica de vértices para buscas em grafos (BFS)
- *
- * A fila usa o campo 'prox' em cada VERTICE para encadear os vértices na estrutura
+ * @brief Estrutura para fila ligada (BFT)
  */
 typedef struct Fila {
-	VERTICE* frente;  /**< Apontador para o vértice no início da fila */
-	VERTICE* tras;    /**< Apontador para o vértice no fim da fila */
+    NOFILA* frente; /**< Apontador para o nó da frente da fila */
+    NOFILA* tras;   /**< Apontador para o nó do final da fila */
 } FILA;
+
 /**
  * @struct Rede_Grafos
- * @brief Conjunto de grafos separados por frequência.
+ * @brief Representa uma rede de grafos, onde cada grafo está associado a uma frequência.
  */
 typedef struct Rede_Grafos {
-	GRAFO* listaGrafos;
+    GRAFO* listaGrafos; /**< Apontador para a lista ligada de grafos */
 } REDE;
 
+/**
+ * @struct VerticeFicheiro
+ * @brief Estrutura auxiliar para armazenar informações de vértices para ficheiro binario
+ */
 typedef struct VerticeFicheiro {
-	char frequencia;
-	int x;
-	int y;
-}VerticeFICHEIRO;
+    char frequencia; /**< Frequência da antena */
+    int x;           /**< Coordenada X do vértice */
+    int y;           /**< Coordenada Y do vértice */
+} VerticeFICHEIRO;
 
+/**
+ * @struct ArestasFicheiro
+ * @brief Estrutura auxiliar para armazenar informações de arestas para o ficheiro binario
+ */
 typedef struct ArestasFicheiro {
-	int xOrigem;
-	int yOrigem;
-	int xDestino;
-	int yDestino;
-}ArestasFICHEIRO;
+    int xOrigem;  /**< Coordenada X do vértice origem da aresta */
+    int yOrigem;  /**< Coordenada Y do vértice origem da aresta */
+    int xDestino; /**< Coordenada X do vértice destino da aresta */
+    int yDestino; /**< Coordenada Y do vértice destino da aresta */
+} ArestasFICHEIRO;
 
 #pragma endregion
 
@@ -140,100 +150,215 @@ REDE* criarRede();
 #pragma region Funções de Inserção e Manipulação
 
 /**
- * @brief Insere uma nova antena na rede de grafos conforme a frequência
- * @param rede Apontador para a rede
- * @param freqAntena Frequência da antena
- * @param x Coordenada X
- * @param y Coordenada Y
- * @return 0 se inserção for bem-sucedida, 1 em caso de erro
+ * @brief - insere uma nova antena no grafo com base na frequência e coordenadas indicadas.
+ *
+ * @param - grafo: apontador para o grafo onde a antena será inserida.
+ * @param - frequencia: frequência da antena (caracter A-Z).
+ * @param - x: coordenada X da antena.
+ * @param - y: coordenada Y da antena.
+ * @return - 0 se a inserção for bem-sucedida, 1 em caso de erro.
  */
-int inserirAntenaRedeGrafos(GRAFO* grafo, char frequencia, int x, int y);
+int inserirAntenaGrafo(GRAFO* grafo, char frequencia, int x, int y);
 
 /**
- * @brief Conecta dois vértices num grafo com uma aresta bidirecional
- * @param grafo Apontador para o grafo
- * @param origem Índice do vértice de origem
- * @param destino Índice do vértice de destino
- * @return 0 se bem-sucedido, 1 em caso de erro
+ * @brief - conecta dois vértices no grafo com uma aresta bidirecional.
+ *
+ * @param - grafo: apontador para o grafo onde a conexão será feita.
+ * @param - x1: coordenada X do primeiro vértice (origem).
+ * @param - y1: coordenada Y do primeiro vértice (origem).
+ * @param - x2: coordenada X do segundo vértice (destino).
+ * @param - y2: coordenada Y do segundo vértice (destino).
+ * @return - 0 se a conexão for bem-sucedida, 1 em caso de erro.
  */
 int conectarVertices(GRAFO* grafo, int x1, int y1, int x2, int y2);
 
 /**
- * @brief Mostra a rede de grafos numa matriz, com base nas frequências especificadas
- * @param redeGrafos Apontador para a rede
- * @param freqsAntenas Vetor de frequências a considerar
- * @param numFreqs Número de frequências no vetor
- * @return 0 se bem-sucedido, 1 se erro
+ * @brief - mostra a rede de grafos numa matriz, baseada nas frequências presentes.
+ *
+ * @param - redeGrafos: apontador para a rede de grafos a mostrar.
+ * @return - 0 se a operação for bem-sucedida, 1 em caso de erro.
  */
 int mostrarRedeGrafos(REDE* redeGrafos);
 
+/**
+ * @brief - procura um grafo na rede pela sua frequência.
+ *
+ * @param - rede: apontador para a rede de grafos.
+ * @param - freq: frequência do grafo a procurar.
+ * @return - apontador para o grafo encontrado ou NULL se não existir.
+ */
 GRAFO* encontrarGrafoPorFrequencia(REDE* rede, char freq);
 
 /**
- * @brief Lê um ficheiro de texto com a matriz de antenas e carrega na rede
- * @param rede Apontador para a rede
- * @param ficheiroTexto Nome do ficheiro
- * @return 0 se bem-sucedido, 1 em caso de erro
+ * @brief - carrega grafos a partir de um ficheiro de texto para a rede.
+ *
+ * @param - rede: apontador para a rede onde os grafos serão inseridos.
+ * @param - filename: nome do ficheiro de texto a ler.
+ * @return - 0 se a carga for bem-sucedida, 1 em caso de erro.
  */
 int carregaGrafo(REDE* rede, char* filename);
 
+/**
+ * @brief - procura um vértice no grafo pela sua posição (x, y).
+ *
+ * @param - grafo: apontador para o grafo onde a procura será feita.
+ * @param - x: coordenada X do vértice procurado.
+ * @param - y: coordenada Y do vértice procurado.
+ * @return - apontador para o vértice encontrado ou NULL se não existir.
+ */
 VERTICE* encontrarVertice(GRAFO* grafo, int x, int y);
 
+/**
+ * @brief - procura um vértice no grafo pela sua posição (x, y).
+ *
+ * @param - grafo: apontador para o grafo onde a procura será feita.
+ * @param - x: coordenada X do vértice procurado.
+ * @param - y: coordenada Y do vértice procurado.
+ * @return - apontador para o vértice encontrado ou NULL se não existir.
+ */
+VERTICE* encontrarVertice(GRAFO* grafo, int x, int y);
 
+/**
+ * @brief - guarda as arestas de um vértice num ficheiro.
+ *
+ * @param - head: apontador para a lista de arestas a guardar.
+ * @param - fp: apontador para o ficheiro aberto para escrita.
+ * @param - xOrigem: coordenada X do vértice origem das arestas.
+ * @param - yOrigem: coordenada Y do vértice origem das arestas.
+ * @return - número de arestas guardadas com sucesso.
+ */
 int guardarArestas(ARESTA* head, FILE* fp, int xOrigem, int yOrigem);
 
-
+/**
+ * @brief - guarda o grafo num ficheiro binário.
+ *
+ * @param - head: apontador para a lista de vértices do grafo.
+ * @param - filename: nome do ficheiro onde será guardado o grafo.
+ * @return - true se a operação foi bem sucedida, false caso contrário.
+ */
 bool guardarGrafoBin(VERTICE* head, char* filename);
+
+/**
+ * @brief - verifica se existe uma conexão entre dois vértices especificados pelas suas coordenadas.
+ *
+ * @param - grafo: apontador para o grafo.
+ * @param - xOrigem: coordenada X do vértice origem.
+ * @param - yOrigem: coordenada Y do vértice origem.
+ * @param - xDestino: coordenada X do vértice destino.
+ * @param - yDestino: coordenada Y do vértice destino.
+ * @return - true se existe conexão, false caso contrário.
+ */
+bool existeConexaoEntreVertices(GRAFO* grafo, int xOrigem, int yOrigem, int xDestino, int yDestino);
+
+/**
+ * @brief - verifica se uma aresta aponta para o destino especificado.
+ *
+ * @param - head: apontador para a lista de arestas.
+ * @param - xDestino: coordenada X do vértice destino.
+ * @param - yDestino: coordenada Y do vértice destino.
+ * @return - true se existir uma aresta para o destino, false caso contrário.
+ */
+bool existeConexao(ARESTA* head, int xDestino, int yDestino);
+
 
 
 #pragma endregion
 
-#pragma region Funções Auxiliares para BFS
+#pragma region Funções de Eliminação
+
 /**
- * @brief      Inicializa uma fila vazia
- * @param[in]  fila   Apontador para a estrutura da fila que será inicializada
+ * @brief Liberta toda a memória associada a um grafo, incluindo os seus vértices e arestas.
+ *
+ * Esta função destrói um grafo completo, removendo todos os vértices e as respetivas listas de arestas,
+ * libertando toda a memória ocupada.
+ *
+ * @param grafo - apontador para o grafo a destruir.
+ * @return - NULL, indicando que o grafo foi destruído.
+ */
+GRAFO* destruirGrafo(GRAFO* grafo);
+
+/**
+ * @brief Liberta toda a memória associada à lista de vértices, incluindo as listas de arestas e as antenas.
+ *
+ * Para cada vértice da lista, esta função remove todas as arestas adjacentes, liberta a memória da antena
+ * associada e do próprio vértice.
+ *
+ * @param lista - apontador para o início da lista de vértices a destruir.
+ * @return - NULL, indicando que a lista foi destruída.
+ */
+VERTICE* destruirVertices(VERTICE* lista);
+
+/**
+ * @brief Liberta toda a memória associada à lista de arestas.
+ *
+ * Para cada aresta da lista, esta função liberta a memória ocupada pela estrutura da aresta.
+ *
+ * @param lista - apontador para o início da lista de arestas a destruir.
+ * @return - NULL, indicando que a lista foi destruída.
+ */
+ARESTA* destruirArestas(ARESTA* lista);
+
+#pragma endregion
+
+#pragma region Funções Auxiliares para BFS
+
+/**
+ * @brief - cria uma fila vazia.
+ *
+ * @param - fila: apontador para a estrutura da fila a inicializar.
  */
 void criarFila(FILA* fila);
 
 /**
- * @brief      Verifica se a fila está vazia
- * @param[in]  fila   Apontador para a fila a ser verificada
- * @return     true se a fila estiver vazia (frente == NULL), caso contrário false
+ * @brief - verifica se a fila está vazia.
+ *
+ * @param - fila: apontador para a fila a verificar.
+ * @return - true se a fila estiver vazia (frente == NULL), caso contrário false.
  */
 bool filaVazia(FILA* fila);
 
 /**
- * @brief      Enfila um vértice na fila
- * @param[in]  fila      Apontador para a fila
- * @param[in]  vertice   Apontador para o vértice a inserir
- * @return     true se o vértice foi enfileirado com sucesso, false em caso de falha de alocação
+ * @brief - enfileira um vértice na fila.
+ *
+ * @param - fila: apontador para a fila.
+ * @param - vertice: apontador para o vértice a inserir.
+ * @return - true se o vértice foi inserido com sucesso, false em caso de falha de alocação.
  */
 bool enfilarVertice(FILA* fila, VERTICE* vertice);
 
 /**
- * @brief      Desenfileira o vértice que está na frente da fila
- * @param[in]  fila   Apontador para a fila
- * @return     Apontador para o vértice removido, ou NULL se a fila estiver vazia
+ * @brief - desenfileira o vértice da frente da fila.
+ *
+ * @param - fila: apontador para a fila.
+ * @return - apontador para o vértice removido, ou NULL se a fila estiver vazia.
  */
 VERTICE* desenfilarVertice(FILA* fila);
 
 /**
- * @brief      Executa a busca em largura (BFS) a partir de uma antena inicial
- * @param[in]  grafo       Apontador para o grafo onde a BFS será realizada
- * @param[in]  x           Coordenada X da antena inicial
- * @param[in]  y           Coordenada Y da antena inicial
- * @param[out] count       Endereço de um inteiro onde será armazenado o número de vértices visitados.
- * @param[out] resultado   Vetor (tamanho MAX_ANTENAS) onde serão guardados os índices dos vértices visitados,
- *                         na ordem em que foram alcançados pela BFS
- * @return     0 em caso de sucesso (BFS executada), 1 em caso de grafo inválido ou antena inicial não encontrada
+ * @brief - executa uma busca em largura (BFT) no grafo a partir da antena inicial indicada.
+ *
+ * @param - grafo: apontador para o grafo onde será executada a busca.
+ * @param - x: coordenada X da antena inicial.
+ * @param - y: coordenada Y da antena inicial.
+ * @param - count: apontador para inteiro onde será armazenado o número de vértices visitados.
+ * @return - 0 em caso de sucesso, 1 se grafo inválido ou antena inicial não encontrada.
  */
-int BFS(GRAFO* grafo, int x, int y, int* count);
+int BFT(GRAFO* grafo, int x, int y, int* count);
 
 /**
- * @brief      Verifica se um grafo é válido (não é NULL e contém pelo menos um vértice)
- * @param[in]  grafo   Apontador para o grafo a ser validado
- * @return     true se o grafo for válido (não NULL e numVertices > 0), caso contrário false
+ * @brief - valida o grafo, verificando se não é NULL e se tem vértices.
+ *
+ * @param - grafo: apontador para o grafo a validar.
+ * @return - true se o grafo for válido, false caso contrário.
  */
 bool validarGrafo(GRAFO* grafo);
+
+/**
+ * @brief - reinicia o campo visitado de todos os vértices para 0 (não visitado).
+ *
+ * @param - grafo: apontador para a lista de vértices.
+ * @return - apontador para a lista de vértices após reiniciar o campo visitado.
+ */
+VERTICE* resetarVisitados(VERTICE* grafo);
 
 #pragma endregion
