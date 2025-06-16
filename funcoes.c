@@ -478,7 +478,7 @@ bool validarGrafo(GRAFO* grafo) {
  *
  * @param grafo - apontador para o primeiro vértice do grafo.
  * @return VERTICE* - retorna o apontador para o primeiro vértice (inalterado).
- * 
+ *
  */
 VERTICE* resetarVisitados(VERTICE* grafo) {
 	VERTICE* v = grafo;
@@ -598,7 +598,7 @@ bool existeConexaoEntreVertices(GRAFO* grafo, int xOrigem, int yOrigem, int xDes
  * Define os campos 'frente' e 'tras' da fila como NULL, preparando a estrutura para uso.
  *
  * @param[in,out] fila - apontador para a fila a ser inicializada.
- * 
+ *
  */
 void criarFila(FILA* fila) {
 	fila->frente = NULL;
@@ -733,6 +733,149 @@ int BFT(GRAFO* grafo, int x, int y, int* count) {
 
 	return 0;
 }
+int DFS(GRAFO* grafo, int x, int y) {
+	if (grafo == NULL) return 1;
+	if (x > MAX_DIM || x < 0 || y > MAX_DIM || y < 0) return 2;
 
+	VERTICE* vertice = encontrarVertice(grafo, x, y);
+	if (!vertice) return 3;
+
+	ARESTA* adj = vertice->adjacentes;
+	vertice->visitado = 1;
+
+	while (adj) {
+		VERTICE* vizinho = adj->destino;
+		if (!vizinho->visitado)
+		{
+			vizinho->visitado = 1;
+			printf("Antena alcancada: (%d,%d)\n", vizinho->infoAntenas->x, vizinho->infoAntenas->y);
+			DFS(grafo, vizinho->infoAntenas->x, vizinho->infoAntenas->y);
+		}
+		adj = adj->prox;
+	}
+	return 0;
+}
+
+int countPathsDFS(GRAFO* grafo, int xOrigem, int yOrigem, int xDestino, int yDestino) {
+	if (grafo == NULL) return -1;
+
+	VERTICE* origem = encontrarVertice(grafo, xOrigem, yOrigem);
+	VERTICE* destino = encontrarVertice(grafo, xDestino, yDestino);
+	if (!origem || !destino) return -1;
+
+	return countPaths(origem, destino);
+}
+
+int countPaths(VERTICE* origem, VERTICE* destino) {
+	if (origem == NULL) return 0;
+	if (origem == destino) return 1;
+
+	origem->visitado = 1;
+	int totalPaths = 0;
+
+	ARESTA* adj = origem->adjacentes;
+
+	while (adj) {
+		if (!adj->destino->visitado)
+		{
+			totalPaths = countPaths(adj->destino, destino) + totalPaths;
+		}
+		adj = adj->prox;
+	}
+	origem->visitado = 0;
+	return totalPaths;
+}
+
+void inserirEfeitoNefasto(REDE* rede, NEFASTO** nefasto, char frequencia, int x, int y) {
+	NEFASTO* novoNefasto = (NEFASTO*)malloc(sizeof(NEFASTO));
+	if (novoNefasto == NULL) return NULL;
+
+	VERTICE* vertice = encontrarVertice(rede->listaGrafos, x, y);
+	if (vertice = NULL) {
+		free(novoNefasto);
+		return;
+	}
+
+	vertice->infoAntenas->frequencia = frequencia;
+	novoNefasto->vertice = vertice;
+	novoNefasto->prox = *nefasto;
+	*nefasto = novoNefasto;
+}
+
+bool efeitoNefasto(REDE* rede, NEFASTO* nefasto) {
+
+	if (nefasto == NULL) return false;
+
+	rede = rede->listaGrafos;
+	if (rede->listaGrafos == NULL) return false;
+
+	NEFASTO* aux1;
+	NEFASTO* aux2;
+	for (aux1 = nefasto; aux1 != NULL; aux1 = aux1->prox) {
+		for (aux2 = aux1->prox; aux2 != NULL; aux2 = aux2->prox) {
+			if (aux1->vertice->infoAntenas == aux2->vertice->infoAntenas) {
+				int x1 = aux1->vertice->infoAntenas->x;
+				int x2 = aux2->vertice->infoAntenas->x;
+				int y1 = aux1->vertice->infoAntenas->y;
+				int y2 = aux2->vertice->infoAntenas->y;
+				printf("Antena x1y1: (%d, %d) && Antena x2y2: (%d, %d)", x1, y1, x2, y2);
+
+				if (x2 >= x1 + 2 || x1 >= x2 + 2 || x2 <= x1 - 2 || x1 <= x2 - 2)
+				{
+					int numPosX = abs(x2 - x1);
+					int numPosY = abs(y2 - y1);
+
+					int newX1, newX2, newY1, newY2;
+
+					if (x1 < x2)
+					{
+						newX1 = x1 - numPosX;
+						newX2 = x2 + numPosX;
+					}
+					else {
+						newX1 = x1 + numPosX;
+						newX2 = x2 - numPosX;
+					}
+					if (y1 < y2)
+					{
+						newY1 = y1 - numPosY;
+						newY2 = y2 + numPosY;
+					}
+					else {
+						newY1 = y1 + numPosY;
+						newY2 = y2 - numPosY;
+					}
+
+					printf("\nPosicoes do efeito nefasto: x1y1: (%d, %d) | x2y2: (%d, %d)\n", newX1, newY1, newX2, newY2); // Mostrar as posições do efeito nefasto
+
+					if (newX1 >= 0 && newX1 < MAX_DIM && newY1 >= 0 && newY1 < MAX_DIM) { // verificar se newX1 e newY1 estão dentro dos limites válidos da cidade
+						inserirEfeitoNefasto(rede, &nefasto, '#', newX1, newY1);
+					}
+					else
+					{
+						printf("\nEfeito nefasto fora de limite x1y1: (%d, %d)", newX1, newY1);
+					}
+
+					if (newX2 >= 0 && newX2 < MAX_DIM && newY2 >= 0 && newY2 < MAX_DIM) { // verificar se newX2 e newY2 estão dentro dos limites válidos da cidade
+						inserirEfeitoNefasto(rede, &nefasto, '#', newX2, newY2);
+					}
+					else
+					{
+						printf("\nEfeito nefasto fora de limite x2y2: (%d, %d)", newX2, newY2);
+					}
+				}
+				else
+				{
+					printf("\nAntenas muito proximas!");
+				}
+			}
+			else {
+				printf("\nAntenas com frequencias diferentes!");
+			}
+
+			printf("\n --------------------------- \n");
+		}
+	}
+	return true;
+}
 #pragma endregion
-

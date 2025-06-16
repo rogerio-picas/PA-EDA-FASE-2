@@ -54,6 +54,7 @@ int main() {
 	conectarVertices(grafoB, 13, 6, 5, 7);
 	conectarVertices(grafoB, 13, 6, 3, 6);
 
+	// Teste de conexão entre vertices
 	bool conexao = existeConexaoEntreVertices(grafoA, 2, 5, 4, 6);
 	if (!conexao)
 	{
@@ -66,7 +67,26 @@ int main() {
 
 	BFT(grafoB, 3, 6, &count);
 
+	VERTICE* origem = encontrarVertice(grafoA, 2, 5);
+	VERTICE* destino = encontrarVertice(grafoA, 19, 17);
+
+	//if (origem == NULL || destino == NULL) {
+	//	printf("Origem ou destino não encontrados.\n");
+	//}
+	//else {
+	//	int totalPaths = countPaths(origem, destino);
+	//	printf("Total de caminhos possiveis de (%d,%d) para (%d,%d): %d\n",
+	//		origem->infoAntenas->x, origem->infoAntenas->y,
+	//		destino->infoAntenas->x, destino->infoAntenas->y,
+	//		totalPaths);
+	//}
+
+
 	mostrarRedeGrafos(rede);
+
+	// Utilização do DFS
+	printf("DFS -> Antenas alcancadas a partir de (3, 6)\n");
+	DFS(grafoB, 3, 6);
 
 	printf("\nAntenas visitadas na BFT: \n");
 	VERTICE* v = grafoB->vertices;
@@ -79,6 +99,9 @@ int main() {
 		}
 		v = v->prox;
 	}
+
+	// Função para destruir o grafo
+	//destruirGrafo(grafoA);
 
 	// Listagem de grafos pela frequencia e numero de vertices
 	GRAFO* listarGrafos = rede->listaGrafos;

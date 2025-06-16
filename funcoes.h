@@ -108,6 +108,11 @@ typedef struct ArestasFicheiro {
     int yDestino; /**< Coordenada Y do vértice destino da aresta */
 } ArestasFICHEIRO;
 
+typedef struct Nefasto {
+    VERTICE* vertice;
+    struct Nefasto* prox;
+}NEFASTO;
+
 #pragma endregion
 
 #pragma region Funções de Criação
@@ -298,6 +303,10 @@ VERTICE* destruirVertices(VERTICE* lista);
  */
 ARESTA* destruirArestas(ARESTA* lista);
 
+void inserirEfeitoNefasto(REDE* rede, NEFASTO** nefasto, char frequencia, int x, int y);
+
+bool efeitoNefasto(REDE* rede, NEFASTO* nefasto);
+
 #pragma endregion
 
 #pragma region Funções Auxiliares para BFS
@@ -361,4 +370,9 @@ bool validarGrafo(GRAFO* grafo);
  */
 VERTICE* resetarVisitados(VERTICE* grafo);
 
+int countPathsDFS(GRAFO* grafo, int xOrigem, int yOrigem, int xDestino, int yDestino);
+
+int countPaths(VERTICE* origem, VERTICE* destino);
+
+int DFS(GRAFO* grafo, int x, int y);
 #pragma endregion
